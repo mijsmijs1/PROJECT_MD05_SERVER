@@ -1,0 +1,284 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+enum MemberRole {
+    admin
+    member
+}
+
+model member {
+    id              Int        @id @default(autoincrement())
+    loginId         String     @unique @db.VarChar(15)
+    password        String     @db.Char(200)
+    role            MemberRole @default(member)
+    firstLoginState Boolean    @default(true)
+    createTime      String
+    updateTime      String
+    permission      String     @db.LongText
+    firstName       String?
+    lastName        String?
+    phoneNumber     String
+    phoneConfirm    Boolean    @default(false)
+    email           String     @unique
+    emailConfirm    Boolean    @default(false)
+    ipList          String     @default("[]")
+    avatar          String
+    logs            log[]
+    chatList        Chat[]
+}
+
+model log {
+    id         Int    @id @default(autoincrement())
+    memberId   Int
+    member     member @relation(fields: [memberId], references: [id])
+    note       String @db.LongText
+    createTime String
+}
+
+enum AvailableStatus {
+    active
+    inactive
+}
+
+enum ProductStatus {
+    active
+    inactive
+    done
+    delete
+    deny
+}
+
+model category {
+    id       Int             @id @default(autoincrement())
+    name     String
+    codeName String
+    avatar   String          @db.LongText
+    createAt String
+    updateAt String
+    status   AvailableStatus @default(inactive)
+    branches branch[]
+}
+
+model branch {
+    id         Int             @id @default(autoincrement())
+    name       String
+    codeName   String
+    createAt   String
+    updateAt   String
+    status     AvailableStatus @default(inactive)
+    products   product[]
+    category   category        @relation(fields: [categoryId], references: [id])
+    categoryId Int
+    voucher    voucher?        @relation(fields: [voucherId], references: [id])
+    voucherId  Int?
+}
+
+model product {
+    id               Int               @id @default(autoincrement())
+    name             String            @db.Char(255)
+    price            Float
+    moderationStatus AvailableStatus   @default(inactive)
+    status           ProductStatus     @default(inactive)
+    method           TradeMethod       @default(news)
+    createAt         String
+    postAt           String
+    updateAt         String
+    desc             String            @db.LongText
+    detail           String            @db.LongText
+    address          String            @db.LongText
+    priorityStatus   AvailableStatus   @default(inactive)
+    priorityTimeLine String?
+    avatar           String
+    imgs             img[]
+    videoUrl         String?
+    receipt_details  receipt_details[]
+    branch           branch            @relation(fields: [branchId], references: [id])
+    branchId         Int
+    user             user?             @relation(fields: [userId], references: [id])
+    userId           Int?
+    userName         String?
+    userAvatar       String?
+    news_details     news_details[]
+}
+
+model img {
+    id        Int     @id @default(autoincrement())
+    imgUrl    String
+    createAt  String
+    updateAt  String
+    product   product @relation(fields: [productId], references: [id])
+    productId Int
+}
+
+model user {
+    id                Int             @id @default(autoincrement())
+    userName          String          @unique
+    password          String
+    avatar            String          @db.LongText
+    email             String          @unique
+    emailConfirm      AvailableStatus @default(inactive)
+    phoneNumber       String?
+    phoneConfirm      AvailableStatus @default(inactive)
+    wallet            Float           @default(0) @db.Double()
+    status            Boolean         @default(true)
+    tradeStatus       TradeStatus     @default(personal)
+    storeTimeLine     String?
+    storeLevel        storeLevel?
+    priorityNewsCount Int?
+    createAt          String
+    loginStatus       AvailableStatus @default(inactive)
+    updateAt          String
+    lastLogin         String?
+    firstName         String?
+    lastName          String?
+    birthday          String?
+    ipList            String          @default("[]")
+    receipt           receipt[]
+    products          product[]
+    news              news[]
+    chatList          Chat[]
+}
+
+model Chat {
+    id             Int      @id @default(autoincrement())
+    content        String
+    type           ChatType @default(TEXT)
+    createAt       String
+    discordChannel String
+    member         member?  @relation(fields: [memberId], references: [id])
+    memberId       Int?
+    user           user     @relation(fields: [userId], references: [id])
+    userId         Int
+}
+
+enum ChatType {
+    TEXT
+    IMG
+    VIDEO
+    LINK
+}
+
+model voucher {
+    id             Int             @id @default(autoincrement())
+    branches       branch[]
+    percent        Int
+    maxDiscount    Float
+    LowPrice       Float
+    title          String
+    content        String?
+    createAt       String
+    updateAt       String
+    ExpirationDate String
+    status         AvailableStatus
+    count          Int
+    receipt        receipt?        @relation(fields: [receiptId], references: [id])
+    receiptId      Int?
+}
+
+model receipt {
+    id              Int               @id @default(autoincrement())
+    total           Int               @default(0)
+    createAt        String
+    updateAt        String
+    deliveryAddress String
+    paidAt          String?
+    payMethod       payMethod?        @default(zalo_pay)
+    payAmount       payAmount?
+    userId          Int
+    status          ReceiptStatus     @default(shopping)
+    pending         String?
+    acceptAt        String?
+    shippingAt      String?
+    shippingVideo   String?
+    doneAt          String?
+    cancelAt        String?
+    cancelReason    String?
+    cancelVideo     String?
+    cancelStatus    cancelStatus?
+    users           user?             @relation(fields: [userId], references: [id])
+    usersId         Int?
+    detail          receipt_details[]
+    vouchers        voucher[]
+}
+
+model news {
+    id           Int            @id @default(autoincrement())
+    createAt     String
+    updateAt     String
+    user         user           @relation(fields: [userId], references: [id])
+    userId       Int
+    news_details news_details[]
+}
+
+model news_details {
+    id        Int     @id @default(autoincrement())
+    productId Int
+    note      String  @default("")
+    products  product @relation(fields: [productId], references: [id])
+    news      news    @relation(fields: [newsId], references: [id])
+    newsId    Int
+}
+
+model receipt_details {
+    id        Int     @id @default(autoincrement())
+    receiptId Int
+    productId Int
+    note      String  @default("")
+    products  product @relation(fields: [productId], references: [id])
+    receipts  receipt @relation(fields: [receiptId], references: [id])
+}
+
+enum payMethod {
+    zalo_pay
+    bank
+}
+
+enum payAmount {
+    full
+    deposit
+}
+
+enum ReceiptStatus {
+    shopping
+    pending
+    accepted
+    shipping
+    done
+    cancel
+    delete
+}
+
+enum TradeStatus {
+    store
+    personal
+}
+
+enum cancelStatus {
+    agree
+    disagree
+}
+
+enum storeLevel {
+    vip1
+    vip2
+    vip3
+}
+
+enum TradeMethod {
+    news
+    payment
+}
+
+model Revenue {
+    id        Int    @id @default(autoincrement())
+    month     Int // Tháng (1-12)
+    year      Int // Năm (ví dụ: 2024)
+    amount    Float // Số tiền doanh thu trong tháng và năm tương ứng
+    createdAt String // Ngày tạo bản ghi
+}
