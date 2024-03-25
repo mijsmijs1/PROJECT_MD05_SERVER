@@ -63,7 +63,7 @@ export class MemberController {
     }
   }
 
-  @Get("/email/:token")
+  @Get("/email/:tokenMember")
   async emailConfirm(@Req() req: RequestToken, @Res() res: Response) {
     try {
       let user = await this.memberService.findByLoginId(req.tokenData.loginId)

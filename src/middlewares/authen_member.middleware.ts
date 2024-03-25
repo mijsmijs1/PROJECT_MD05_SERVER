@@ -12,10 +12,11 @@ export class TokenAuthenMiddleware implements NestMiddleware {
 
   async use(req: RequestToken, res: Response, next: NextFunction) {
     try {
-      let tokenCode = (req.headers?.tokenmember ? String(req.headers?.tokenmember) : req.params.tokenmember);
+      let tokenCode = (req.headers?.tokenmember ? String(req.headers?.tokenmember) : String(req.params.tokenMember));
       if (tokenCode == "undefined" || tokenCode == "null") {
-        tokenCode = String(req.query?.tokenmember)
+        tokenCode = String(req.query?.tokenMember)
       }
+      console.log('token', tokenCode);
 
 
       if (!tokenCode) return res.status(413).json({
@@ -24,7 +25,7 @@ export class TokenAuthenMiddleware implements NestMiddleware {
 
       let tokenData = token.decodeToken(tokenCode)
       req.tokenData = tokenData;
-
+      console.log('token', tokenData);
       let member = await this.prisma.member.findUnique({
         where: {
           id: (tokenData as member).id
@@ -37,7 +38,7 @@ export class TokenAuthenMiddleware implements NestMiddleware {
 
       next();
     } catch (err) {
-
+      console.log(err);
       return res.status(413).json({
         message: "Xác thực thất bại!"
       })
